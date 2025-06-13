@@ -25,5 +25,5 @@ All picture are saved :
 
 read the doc to use it.
 
-next version, select easy a  new file and finish the gui. If you see issue or other questions, write an issue. Thank you.
+next version, and finish the gui. If you see issue or other questions, write an issue. Thank you.
 
