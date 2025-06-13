@@ -18,3 +18,11 @@ You can move the grid to select some part of the picture.
 
 of course, you can increase o the size of the square
 ![image](https://github.com/user-attachments/assets/d5d98b2a-fb65-4766-9877-ebef2c0617cf)
+
+All picture are saved :
+
+![image](https://github.com/user-attachments/assets/0ff3af76-9c75-4079-a68c-e476da3df5da)
+
+read the doc to use it.
+
+
