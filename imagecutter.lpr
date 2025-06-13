@@ -58,14 +58,16 @@ begin
     BeginDrawing();
       ClearBackground(RAYWHITE);
 
-      // Dessiner l'image
+      // Dessiner l'image ou la liste de sélection
       DrawImage(imagecutter);
 
-      // Dessiner la grille
-      DrawGrid(imagecutter);
+      // Dessiner la grille (seulement si pas en mode liste)
+      if not imagecutter.showFileList then
+        DrawGrid(imagecutter);
 
-      // Dessiner la cellule sélectionnée
-      DrawSelectedCell(imagecutter);
+      // Dessiner la cellule sélectionnée (seulement si pas en mode liste)
+      if not imagecutter.showFileList then
+        DrawSelectedCell(imagecutter);
 
       // Dessiner l'interface
       DrawRightPanel(imagecutter);
@@ -84,6 +86,13 @@ begin
   begin
     UnloadFont(imagecutter.customFont);
     WriteLn('Police personnalisée libérée');
+  end;
+
+  // Nettoyage de la liste de fichiers
+  if imagecutter.imageFiles.count > 0 then
+  begin
+    UnloadDirectoryFiles(imagecutter.imageFiles);
+    WriteLn('Liste de fichiers libérée');
   end;
 
   CloseWindow();

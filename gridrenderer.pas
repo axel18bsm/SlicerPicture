@@ -13,6 +13,49 @@ procedure DrawSelectedCell(const cutter: TImageCutter);
 
 implementation
 
+procedure DrawFileList(const cutter: TImageCutter);
+var
+  i: Integer;
+  yPos: Integer;
+  imageArea: TRectangle;
+  fileName: string;
+begin
+  with cutter do
+  begin
+    // Définir la zone d'affichage (même que pour l'image)
+    imageArea := RectangleCreate(0, 0, screenWidth - rightPanelWidth, screenHeight);
+    DrawRectangleRec(imageArea, RAYWHITE);
+    DrawRectangleLinesEx(imageArea, 2, LIGHTGRAY);
+
+    if imageFiles.count = 0 then
+    begin
+      // Aucun fichier trouvé
+      DrawText('Aucun fichier image trouvé dans ressources/',
+               (screenWidth - rightPanelWidth) div 2 - 150,
+               screenHeight div 2,
+               20, GRAY);
+      Exit;
+    end;
+
+    // Titre
+    DrawText('Choisir une image:',
+             50, 50, 24, DARKGRAY);
+
+    // Lister les fichiers
+    yPos := 100;
+    for i := 0 to imageFiles.count - 1 do
+    begin
+      fileName := ExtractFileName(imageFiles.paths[i]);
+      DrawText(PChar(fileName), 50, yPos, 20, BLACK);
+      yPos := yPos + 30;
+
+      // Ne pas dépasser la zone
+      if yPos > screenHeight - 100 then
+        Break;
+    end;
+  end;
+end;
+
 procedure DrawImage(const cutter: TImageCutter);
 var
   imageArea: TRectangle;
@@ -22,6 +65,13 @@ var
 begin
   with cutter do
   begin
+    // Si on doit afficher la liste au lieu de l'image
+    if showFileList then
+    begin
+      DrawFileList(cutter);
+      Exit;
+    end;
+
     if not imageLoaded then
     begin
       // Dessiner un fond vide

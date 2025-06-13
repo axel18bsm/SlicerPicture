@@ -58,6 +58,9 @@ type
     // Système de double-clic
     lastClickTime: Double;
     doubleClickDetected: Boolean;
+    // NOUVELLES variables pour la sélection de fichiers
+    showFileList: Boolean;
+    imageFiles: TFilePathList;  // Structure Raylib native
   end;
 
 var
@@ -73,6 +76,21 @@ function SaveSingleCell(var cutter: TImageCutter; cellX, cellY: Integer): Boolea
 procedure SaveAllCells(var cutter: TImageCutter);
 
 implementation
+
+procedure ScanImageFiles(var cutter: TImageCutter);
+begin
+  with cutter do
+  begin
+    // Libérer l'ancienne liste si elle existe
+    if imageFiles.count > 0 then
+      UnloadDirectoryFiles(imageFiles);
+
+    // Scanner le dossier ressources avec filtrage automatique
+    imageFiles := LoadDirectoryFilesEx('ressources', '.png;.jpg;.bmp', false);
+
+    WriteLn('Fichiers images trouvés: ', imageFiles.count);
+  end;
+end;
 
 procedure LoadCustomFont(var cutter: TImageCutter);
 const
@@ -350,6 +368,13 @@ begin
 
   // Charger la police personnalisée avec support des accents français
   LoadCustomFont(imgecutter);
+  // NOUVELLES initialisations à ajouter à la fin
+  imgecutter.showFileList := True;  // Commencer par afficher la liste
+  imgecutter.imageFiles.count := 0;
+  imgecutter.imageFiles.paths := nil;
+
+  // Scanner les fichiers au démarrage
+  ScanImageFiles(imgecutter);
 end;
 
 initialization

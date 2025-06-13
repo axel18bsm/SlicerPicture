@@ -11,12 +11,46 @@ uses
 procedure DrawRightPanel(var cutter: TImageCutter);
 procedure UpdateGUI(var cutter: TImageCutter);
 function LoadImageDialog(): string;
+procedure CalculateGrid(var cutter: TImageCutter);
+
 
 // Gestion des contrôles
 procedure HandleKeyboardInput(var cutter: TImageCutter);
 procedure HandleMouseInput(var cutter: TImageCutter);
 
 implementation
+procedure LoadSpecificImage(var cutter: TImageCutter; filename: string);
+begin
+  with cutter do
+  begin
+    WriteLn('Tentative de chargement: ', filename);
+
+    if imageLoaded then
+    begin
+      UnloadTexture(texture);
+      WriteLn('Ancienne texture libérée');
+    end;
+
+    texture := LoadTexture(PChar(filename));
+
+    if IsTextureValid(texture) then
+    begin
+      imageLoaded := True;
+      imageName := ExtractFileName(filename);
+      showFileList := False;  // Masquer la liste après chargement
+      CalculateGrid(cutter);
+      WriteLn('Image chargée avec succès: ', imageName);
+      WriteLn('Dimensions: ', texture.width, 'x', texture.height);
+    end
+    else
+    begin
+      WriteLn('ERREUR: Impossible de charger la texture');
+      imageLoaded := False;
+    end;
+  end;
+end;
+
+
 
 function LoadImageDialog(): string;
 begin
@@ -278,35 +312,23 @@ begin
 
   with cutter do
   begin
-    // Bouton charger image
-    if GuiButton(RectangleCreate(x, buttonY, 120, 30), 'Charger Image') <> 0 then
+    // Bouton charger/changer image
+    if imageLoaded and not showFileList then
     begin
-      imagePath := LoadImageDialog();
-      if imagePath <> '' then
+      if GuiButton(RectangleCreate(x, buttonY, 120, 30), 'Changer Image') <> 0 then
       begin
-        WriteLn('Tentative de chargement: ', imagePath);
-
-        if imageLoaded then
+        showFileList := True;
+        WriteLn('Retour à la liste de sélection');
+      end;
+    end
+    else
+    begin
+      if GuiButton(RectangleCreate(x, buttonY, 120, 30), 'Choisir Image') <> 0 then
+      begin
+        if not showFileList then
         begin
-          UnloadTexture(texture);
-          WriteLn('Ancienne texture libérée');
-        end;
-
-        texture := LoadTexture(PChar(imagePath));
-
-        // Vérifier que la texture est valide
-        if IsTextureValid(texture) then
-        begin
-          imageLoaded := True;
-          imageName := ExtractFileName(imagePath);
-          CalculateGrid(cutter);
-          WriteLn('Image chargée avec succès: ', imageName);
-          WriteLn('Dimensions: ', texture.width, 'x', texture.height);
-        end
-        else
-        begin
-          WriteLn('ERREUR: Impossible de charger la texture');
-          imageLoaded := False;
+          showFileList := True;
+          WriteLn('Affichage de la liste de sélection');
         end;
       end;
     end;
@@ -327,7 +349,7 @@ begin
 
     // Bouton découpage
     GuiSetState(STATE_NORMAL);
-    if not imageLoaded or (grid.rows = 0) or (grid.cols = 0) then
+    if not imageLoaded or (grid.rows = 0) or (grid.cols = 0) or showFileList then
       GuiSetState(STATE_DISABLED);
 
     if GuiButton(RectangleCreate(x, buttonY, 120, 30), 'Lancer Découpage') <> 0 then
@@ -484,9 +506,32 @@ var
   wheelMove: Single;
   currentTime: Double;
   timeDiff: Double;
+  clickedLine: Integer;
 begin
   with cutter do
   begin
+    mousePos := GetMousePosition();
+
+    // NOUVEAU: Gestion des clics sur la liste de fichiers
+    if showFileList and IsMouseButtonPressed(MOUSE_BUTTON_LEFT) then
+    begin
+      imageArea := RectangleCreate(0, 0, screenWidth - rightPanelWidth, screenHeight);
+      if CheckCollisionPointRec(mousePos, imageArea) and (imageFiles.count > 0) then
+      begin
+        // Calculer quelle ligne est cliquée
+        if (mousePos.y >= 100) then
+        begin
+          clickedLine := Round((mousePos.y - 100) / 30);
+          if (clickedLine >= 0) and (clickedLine < imageFiles.count) then
+          begin
+            WriteLn('Fichier sélectionné: ', ExtractFileName(imageFiles.paths[clickedLine]));
+            LoadSpecificImage(cutter, imageFiles.paths[clickedLine]);
+          end;
+        end;
+      end;
+      Exit; // Ne pas traiter les autres clics en mode liste
+    end;
+
     // Contrôle de la taille du carré avec la molette (en mode carré fixe)
     if fixedSquareMode then
     begin
@@ -505,9 +550,7 @@ begin
       end;
     end;
 
-    if not imageLoaded or not grid.visible then Exit;
-
-    mousePos := GetMousePosition();
+    if not imageLoaded or not grid.visible or showFileList then Exit;
 
     // Définir la zone de l'image (exclut le panneau droit)
     imageArea := RectangleCreate(0, 0, screenWidth - rightPanelWidth, screenHeight);
