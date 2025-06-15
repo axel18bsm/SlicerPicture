@@ -29,6 +29,12 @@ add a system to drag and drop big picture by mous.
 put all images in ressources directory, you can see them and load one by one
 ![image](https://github.com/user-attachments/assets/5cdedd98-62b7-416e-b671-0969223265b0)
 
+you can move the picture, the grid will stay and stuck at the picture, of course you can the grid
+with arrows.
+
+![image](https://github.com/user-attachments/assets/32dbca57-e900-41dc-abc9-1f5374ce2df5)
+
+
 read the doc to use it.
 
 next version, and finish the gui. If you see issue or other questions, write an issue. Thank you.
