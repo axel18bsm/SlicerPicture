@@ -32,12 +32,14 @@ begin
   WriteLn('- G : Afficher/Masquer grille');
   WriteLn('- Flèches : Déplacer la grille');
   WriteLn('- Espace : Lancer le découpage');
+  WriteLn('- Clic + Glisser : Déplacer l''image');
   WriteLn('- Échap : Quitter');
   WriteLn('');
   WriteLn('Interface:');
   WriteLn('- Panneau droit : Contrôles GUI');
   WriteLn('- Spinners pour lignes/colonnes');
   WriteLn('- TextBox pour préfixe de fichier');
+  WriteLn('- Liste de sélection d''images');
   WriteLn('');
 
   // Boucle principale

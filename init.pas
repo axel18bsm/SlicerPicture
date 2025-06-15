@@ -61,7 +61,12 @@ type
     // NOUVELLES variables pour la sélection de fichiers
     showFileList: Boolean;
     imageFiles: TFilePathList;  // Structure Raylib native
+    // NOUVELLES variables pour la navigation 1:1
+    imageOffsetX, imageOffsetY: Integer;  // Position de l'image
+    isDragging: Boolean;                  // État glisser-déposer
+    lastMouseX, lastMouseY: Integer;      // Position souris précédent
   end;
+
 
 var
 imgecutter :TImageCutter;
@@ -372,6 +377,13 @@ begin
   imgecutter.showFileList := True;  // Commencer par afficher la liste
   imgecutter.imageFiles.count := 0;
   imgecutter.imageFiles.paths := nil;
+
+  // Navigation image
+  imgecutter.imageOffsetX := 0;
+  imgecutter.imageOffsetY := 0;
+  imgecutter.isDragging := False;
+  imgecutter.lastMouseX := 0;
+  imgecutter.lastMouseY := 0;
 
   // Scanner les fichiers au démarrage
   ScanImageFiles(imgecutter);

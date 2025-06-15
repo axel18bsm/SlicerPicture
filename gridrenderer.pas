@@ -59,9 +59,10 @@ end;
 procedure DrawImage(const cutter: TImageCutter);
 var
   imageArea: TRectangle;
-  scale: Single;
-  drawWidth, drawHeight: Integer;
   drawX, drawY: Integer;
+  clipRect: TRectangle;
+  sourceRect: TRectangle;
+  destRect: TRectangle;
 begin
   with cutter do
   begin
@@ -87,67 +88,94 @@ begin
       Exit;
     end;
 
-    // Calculer l'échelle pour adapter l'image à la zone disponible
+    // Zone d'affichage disponible
     imageArea := RectangleCreate(0, 0, screenWidth - rightPanelWidth, screenHeight);
 
-    scale := Min(imageArea.width / texture.width, imageArea.height / texture.height);
+    // Position de l'image (échelle 1:1)
+    drawX := imageOffsetX;
+    drawY := imageOffsetY;
 
-    drawWidth := Round(texture.width * scale);
-    drawHeight := Round(texture.height * scale);
-    drawX := Round((imageArea.width - drawWidth) / 2);
-    drawY := Round((imageArea.height - drawHeight) / 2);
+    // Calculer la partie visible de l'image
+    sourceRect.x := 0;
+    sourceRect.y := 0;
+    sourceRect.width := texture.width;
+    sourceRect.height := texture.height;
 
-    // Dessiner l'image centrée et mise à l'échelle
-    DrawTextureEx(texture,
-                  Vector2Create(drawX, drawY),
-                  0,
-                  scale,
-                  WHITE);
+    destRect.x := drawX;
+    destRect.y := drawY;
+    destRect.width := texture.width;
+    destRect.height := texture.height;
+
+    // Appliquer le clipping pour ne dessiner que la partie visible
+    if drawX < 0 then
+    begin
+      sourceRect.x := -drawX;
+      sourceRect.width := sourceRect.width + drawX;
+      destRect.x := 0;
+      destRect.width := destRect.width + drawX;
+    end;
+
+    if drawY < 0 then
+    begin
+      sourceRect.y := -drawY;
+      sourceRect.height := sourceRect.height + drawY;
+      destRect.y := 0;
+      destRect.height := destRect.height + drawY;
+    end;
+
+    if destRect.x + destRect.width > imageArea.width then
+    begin
+      sourceRect.width := sourceRect.width - ((destRect.x + destRect.width) - imageArea.width);
+      destRect.width := destRect.width - ((destRect.x + destRect.width) - imageArea.width);
+    end;
+
+    if destRect.y + destRect.height > imageArea.height then
+    begin
+      sourceRect.height := sourceRect.height - ((destRect.y + destRect.height) - imageArea.height);
+      destRect.height := destRect.height - ((destRect.y + destRect.height) - imageArea.height);
+    end;
+
+    // Dessiner seulement la partie visible de l'image
+    if (sourceRect.width > 0) and (sourceRect.height > 0) then
+    begin
+      DrawTexturePro(texture, sourceRect, destRect, Vector2Create(0, 0), 0, WHITE);
+    end;
   end;
 end;
 
 procedure DrawGrid(const cutter: TImageCutter);
 var
   imageArea: TRectangle;
-  scale: Single;
-  drawWidth, drawHeight: Integer;
   drawX, drawY: Integer;
   i, j: Integer;
-  cellDrawWidth, cellDrawHeight: Integer;
   lineX, lineY: Integer;
 begin
   with cutter do
   begin
-    if not imageLoaded or not grid.visible or (grid.rows = 0) or (grid.cols = 0) then
+    if not imageLoaded or not grid.visible or (grid.rows = 0) or (grid.cols = 0) or showFileList then
       Exit;
 
-    // Calculer la même échelle que pour l'image
+    // Zone d'affichage disponible
     imageArea := RectangleCreate(0, 0, screenWidth - rightPanelWidth, screenHeight);
-    scale := Min(imageArea.width / texture.width, imageArea.height / texture.height);
 
-    drawWidth := Round(texture.width * scale);
-    drawHeight := Round(texture.height * scale);
-    drawX := Round((imageArea.width - drawWidth) / 2);
-    drawY := Round((imageArea.height - drawHeight) / 2);
-
-    // Calculer la taille des cellules à l'échelle
-    cellDrawWidth := Round(grid.cellWidth * scale);
-    cellDrawHeight := Round(grid.cellHeight * scale);
+    // Position de l'image (échelle 1:1)
+    drawX := imageOffsetX;
+    drawY := imageOffsetY;
 
     // Dessiner les lignes verticales
     for i := 0 to grid.cols do
     begin
-      lineX := drawX + Round(grid.offsetX * scale) + (i * cellDrawWidth);
-      if (lineX >= drawX) and (lineX <= drawX + drawWidth) then
-        DrawLine(lineX, drawY, lineX, drawY + drawHeight, BLACK);
+      lineX := drawX + grid.offsetX + (i * grid.cellWidth);
+      if (lineX >= 0) and (lineX <= imageArea.width) then
+        DrawLine(lineX, Max(0, drawY), lineX, Min(Round(imageArea.height), drawY + texture.height), BLACK);
     end;
 
     // Dessiner les lignes horizontales
     for j := 0 to grid.rows do
     begin
-      lineY := drawY + Round(grid.offsetY * scale) + (j * cellDrawHeight);
-      if (lineY >= drawY) and (lineY <= drawY + drawHeight) then
-        DrawLine(drawX, lineY, drawX + drawWidth, lineY, BLACK);
+      lineY := drawY + grid.offsetY + (j * grid.cellHeight);
+      if (lineY >= 0) and (lineY <= imageArea.height) then
+        DrawLine(Max(0, drawX), lineY, Min(Round(imageArea.width), drawX + texture.width), lineY, BLACK);
     end;
   end;
 end;

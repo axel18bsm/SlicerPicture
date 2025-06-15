@@ -38,6 +38,11 @@ begin
       imageLoaded := True;
       imageName := ExtractFileName(filename);
       showFileList := False;  // Masquer la liste après chargement
+
+      // Centrer l'image lors du chargement
+      imageOffsetX := (screenWidth - rightPanelWidth - texture.width) div 2;
+      imageOffsetY := (screenHeight - texture.height) div 2;
+
       CalculateGrid(cutter);
       WriteLn('Image chargée avec succès: ', imageName);
       WriteLn('Dimensions: ', texture.width, 'x', texture.height);
@@ -248,7 +253,7 @@ var
   textboxResult: Integer;
   exampleText: string;
 begin
-  controlY := y;
+  controlY := y-100;
 
   with cutter do
   begin
@@ -308,7 +313,7 @@ var
   buttonY: Integer;
   gridButtonText: string;
 begin
-  buttonY := 600;
+  buttonY := 500;
 
   with cutter do
   begin
@@ -340,7 +345,7 @@ begin
     else
       gridButtonText := 'Afficher Grille';
 
-    if (GuiButton(RectangleCreate(x, buttonY, 120, 30), PChar(gridButtonText)) <> 0) and imageLoaded then
+    if (GuiButton(RectangleCreate(x, buttonY, 120, 30), PChar(gridButtonText)) <> 0) and imageLoaded and not showFileList then
     begin
       grid.visible := not grid.visible;
       WriteLn('Grille visible: ', grid.visible);
@@ -498,15 +503,14 @@ procedure HandleMouseInput(var cutter: TImageCutter);
 var
   mousePos: TVector2;
   imageArea: TRectangle;
-  scale: Single;
-  drawWidth, drawHeight: Integer;
-  drawX, drawY: Integer;
   relativeX, relativeY: Integer;
   cellX, cellY: Integer;
   wheelMove: Single;
   currentTime: Double;
   timeDiff: Double;
   clickedLine: Integer;
+  deltaX, deltaY: Integer;
+  minX, maxX, minY, maxY: Integer;
 begin
   with cutter do
   begin
@@ -550,31 +554,67 @@ begin
       end;
     end;
 
-    if not imageLoaded or not grid.visible or showFileList then Exit;
+    if not imageLoaded or showFileList then Exit;
 
     // Définir la zone de l'image (exclut le panneau droit)
     imageArea := RectangleCreate(0, 0, screenWidth - rightPanelWidth, screenHeight);
 
-    if CheckCollisionPointRec(mousePos, imageArea) and IsMouseButtonPressed(MOUSE_BUTTON_LEFT) then
+    // NOUVEAU: Gestion du glisser-déposer pour déplacer l'image
+    if CheckCollisionPointRec(mousePos, imageArea) then
+    begin
+      if IsMouseButtonPressed(MOUSE_BUTTON_LEFT) then
+      begin
+        isDragging := True;
+        lastMouseX := Round(mousePos.x);
+        lastMouseY := Round(mousePos.y);
+      end;
+    end;
+
+    if IsMouseButtonReleased(MOUSE_BUTTON_LEFT) then
+    begin
+      isDragging := False;
+    end;
+
+    if isDragging and IsMouseButtonDown(MOUSE_BUTTON_LEFT) then
+    begin
+      // Calculer le déplacement
+      deltaX := Round(mousePos.x) - lastMouseX;
+      deltaY := Round(mousePos.y) - lastMouseY;
+
+      // Appliquer le déplacement
+      imageOffsetX := imageOffsetX + deltaX;
+      imageOffsetY := imageOffsetY + deltaY;
+
+      // Limiter pour éviter de perdre l'image
+      minX := -(texture.width - 50);  // Garder au moins 50px visibles
+      maxX := Round(imageArea.width) - 50;
+      minY := -(texture.height - 50);
+      maxY := Round(imageArea.height) - 50;
+
+      if imageOffsetX < minX then imageOffsetX := minX;
+      if imageOffsetX > maxX then imageOffsetX := maxX;
+      if imageOffsetY < minY then imageOffsetY := minY;
+      if imageOffsetY > maxY then imageOffsetY := maxY;
+
+      lastMouseX := Round(mousePos.x);
+      lastMouseY := Round(mousePos.y);
+      Exit; // Ne pas traiter la sélection de cellule pendant le drag
+    end;
+
+    // Sélection de cellule seulement si pas en train de glisser et grille visible
+    if not isDragging and grid.visible and CheckCollisionPointRec(mousePos, imageArea) and IsMouseButtonPressed(MOUSE_BUTTON_LEFT) then
     begin
       currentTime := GetTime();
 
-      // Calculer l'échelle et la position de l'image (même calcul que dans GridRenderer)
-      scale := Min(imageArea.width / texture.width, imageArea.height / texture.height);
-      drawWidth := Round(texture.width * scale);
-      drawHeight := Round(texture.height * scale);
-      drawX := Round((imageArea.width - drawWidth) / 2);
-      drawY := Round((imageArea.height - drawHeight) / 2);
-
-      // Calculer la position relative dans l'image mise à l'échelle
-      relativeX := Round(mousePos.x) - drawX - Round(grid.offsetX * scale);
-      relativeY := Round(mousePos.y) - drawY - Round(grid.offsetY * scale);
+      // Calculer la position relative dans l'image (échelle 1:1)
+      relativeX := Round(mousePos.x) - imageOffsetX - grid.offsetX;
+      relativeY := Round(mousePos.y) - imageOffsetY - grid.offsetY;
 
       // Calculer quelle cellule est sélectionnée
       if (grid.cellWidth > 0) and (grid.cellHeight > 0) then
       begin
-        cellX := relativeX div Round(grid.cellWidth * scale);
-        cellY := relativeY div Round(grid.cellHeight * scale);
+        cellX := relativeX div grid.cellWidth;
+        cellY := relativeY div grid.cellHeight;
 
         if (cellX >= 0) and (cellX < grid.cols) and (cellY >= 0) and (cellY < grid.rows) then
         begin
