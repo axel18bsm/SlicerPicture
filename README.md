@@ -23,6 +23,12 @@ All picture are saved :
 
 ![image](https://github.com/user-attachments/assets/0ff3af76-9c75-4079-a68c-e476da3df5da)
 
+add a system to drag and drop big picture by mous.
+![image](https://github.com/user-attachments/assets/d9f25523-8b3d-4db8-a670-5b316d2e3597)
+
+put all images in ressources directory, you can see them and load one by one
+![image](https://github.com/user-attachments/assets/5cdedd98-62b7-416e-b671-0969223265b0)
+
 read the doc to use it.
 
 next version, and finish the gui. If you see issue or other questions, write an issue. Thank you.
